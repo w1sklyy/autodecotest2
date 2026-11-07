@@ -1,0 +1,15 @@
+{
+	"geode": "4.6.0",
+	"gd": {
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
+	},
+	"version": "v1.0.0",
+	"id": "user.autodeco",
+	"name": "AutoDeco",
+	"developer": "user",
+	"description": "Автоматическая декорация уровня в редакторе: 10 стилей, генерация и удаление.",
+	"tags": ["editor", "utility"]
+}
