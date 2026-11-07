@@ -9,21 +9,17 @@
 
 using namespace geode::prelude;
 
-// Every generated object is put into this group -> used to remove only our deco.
 static constexpr int DECO_GROUP = 9999;
 
 struct Style {
 	const char* name;
-	std::vector<int> surface; // placed on top of blocks
-	std::vector<int> side;    // placed beside blocks
-	std::vector<int> bg;      // scattered in the background
-	int color;                // color channel (1005=P1, 1006=P2, 1007=LBG, 1010=black, 1011=white)
-	int density;              // 0..100 chance per candidate spot
+	std::vector<int> surface;
+	std::vector<int> side;
+	std::vector<int> bg;
+	int color;
+	int density;
 };
 
-// Candidate object IDs per style. IMPORTANT: every created object is checked and
-// removed unless it is a pure Decoration (never solid/hazard/trigger/portal),
-// so a wrong ID can never change gameplay. Edit the lists freely.
 static const std::vector<Style>& styles() {
 	static const std::vector<Style> s = {
 		{"Modern",  {18, 19, 20}, {19, 20},     {1, 2, 3},  1005, 45},
@@ -53,7 +49,6 @@ static int removeGenerated(LevelEditorLayer* lel) {
 static GameObject* place(LevelEditorLayer* lel, const Style& st, int id, CCPoint pos, std::mt19937& rng, bool back) {
 	auto* o = lel->createObject(id, pos, false);
 	if (!o) return nullptr;
-	// Safety: only pure decoration allowed.
 	if (o->m_objectType != GameObjectType::Decoration) {
 		lel->removeObject(o, true);
 		return nullptr;
@@ -70,9 +65,8 @@ static int generate(LevelEditorLayer* lel, int styleIdx) {
 	auto chance = [&](int p) { return std::uniform_int_distribution<int>(0, 99)(rng) < p; };
 	auto pick = [&](const std::vector<int>& v) { return v[std::uniform_int_distribution<size_t>(0, v.size() - 1)(rng)]; };
 
-	removeGenerated(lel); // regeneration replaces previous deco only
+	removeGenerated(lel);
 
-	// 1) Analyse the level: grid of original solid blocks.
 	std::set<std::pair<int,int>> cells;
 	int minX = INT_MAX, maxX = INT_MIN, minY = INT_MAX, maxY = INT_MIN;
 	for (auto* o : CCArrayExt<GameObject*>(lel->m_objects)) {
@@ -82,7 +76,7 @@ static int generate(LevelEditorLayer* lel, int styleIdx) {
 		minY = std::min(minY, cy); maxY = std::max(maxY, cy);
 		if (o->m_objectType == GameObjectType::Solid) cells.insert({cx, cy});
 	}
-	if (minX == INT_MAX) return -1; // empty level
+	if (minX == INT_MAX) return -1;
 
 	int count = 0;
 	auto& all = styles();
@@ -94,7 +88,6 @@ static int generate(LevelEditorLayer* lel, int styleIdx) {
 		if (place(lel, st, pick(ids), p, rng, back)) ++count;
 	};
 
-	// 2) Surface + side details on exposed block faces.
 	for (auto& [cx, cy] : cells) {
 		const Style& st = styleFor();
 		float x = cx * 30.f + 15.f, y = cy * 30.f + 15.f;
@@ -106,7 +99,6 @@ static int generate(LevelEditorLayer* lel, int styleIdx) {
 			add(st, st.side, {x + 30.f, y}, true);
 	}
 
-	// 3) Background scatter across the level's bounding box, skipping occupied cells.
 	for (int cx = minX - 2; cx <= maxX + 2; cx += 3) {
 		const Style& st = styleFor();
 		if (st.bg.empty()) continue;
@@ -180,7 +172,6 @@ public:
 	}
 };
 
-#include <Geode/modify/EditorUI.hpp>
 class $modify(AutoDecoUI, EditorUI) {
 	bool init(LevelEditorLayer* lel) {
 		if (!EditorUI::init(lel)) return false;
